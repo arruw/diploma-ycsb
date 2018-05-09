@@ -1,0 +1,64 @@
+version: '3.4'
+
+networks:
+  default:
+    external:
+      name: host
+
+services:
+  master:
+    image: citusdata/citus:7.3.0
+    stop_grace_period: 1m
+    volumes:
+      - type: bind
+        source: /volumes/postgres/data
+        target: /var/lib/postgresql/data
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == mav-ubuntu-02
+      resources:
+        limits:
+          cpus: '3'
+          memory: '2G'
+        reservations:
+          cpus: '2.9'
+          memory: '1.9G'
+
+  worker0:
+    image: citusdata/citus:7.3.0
+    stop_grace_period: 1m
+    volumes:
+      - type: bind
+        source: /volumes/postgres/data
+        target: /var/lib/postgresql/data
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == mav-ubuntu-01
+      resources:
+        limits:
+          cpus: '3'
+          memory: '2G'
+        reservations:
+          cpus: '2.9'
+          memory: '1.9G'
+
+  worker1:
+    image: citusdata/citus:7.3.0
+    stop_grace_period: 1m
+    volumes:
+      - type: bind
+        source: /volumes/postgres/data
+        target: /var/lib/postgresql/data
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == mav-ubuntu-03
+      resources:
+        limits:
+          cpus: '3'
+          memory: '2G'
+        reservations:
+          cpus: '2.9'
+          memory: '1.9G'

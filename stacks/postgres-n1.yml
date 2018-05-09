@@ -1,0 +1,27 @@
+version: '3.4'
+
+networks:
+  default:
+    external:
+      name: host
+
+services:
+  postgres:
+    image: postgres
+    stop_grace_period: 1m
+    command: "-c 'max_connections=1000' -c 'shared_buffers=500MB'"
+    volumes:
+      - type: bind
+        source: /volumes/postgres/data
+        target: /var/lib/postgresql/data
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == mav-ubuntu-02
+      resources:
+        limits:
+          cpus: '3'
+          memory: '2G'
+        reservations:
+          cpus: '2.9'
+          memory: '1.9G'
