@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	databases   []string  = []string{ /*"postgres", */ "cockroachdb"}
-	nodescounts []string  = []string{"1" /*, "3"*/}
-	workloads   []string  = []string{ /*"a", "b", "c", "f",*/ "d"}
-	threads     []string  = []string{ /*"3", "9", "15", "21", "27", "33", "39",*/ "45"}
+	databases   []string  = []string{ /*"postgres",*/ "cockroachdb"}
+	nodescounts []string  = []string{ /*"1",*/ "3"}
+	workloads   []string  = []string{ /*"a", "b", "c", "f", "d",*/ "d", "d"}
+	threads     []string  = []string{ /*"3", "9", "15", "21", "27", "33",*/ "39", "45"}
 	now         time.Time = time.Now()
 	csv         *os.File
 	pwd         string

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-nohup ./stressdb > output.log 2>&1 &
+nohup ./diploma-ycsb > output.log 2>&1 &

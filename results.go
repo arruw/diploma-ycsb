@@ -131,7 +131,7 @@ func (r *Result) ToCsvRow() string {
 func BuildCsvHeader() string {
 	return fmt.Sprintf(
 		"%s,%s,%s,%s,%s,%s",
-		"timestamp,database,workload,nodes,threads,target,duration,throughput",
+		"timestamp,database,workload,nodes,threads,duration,throughput",
 		buildCsvOperationHeader("read"),
 		buildCsvOperationHeader("insert"),
 		buildCsvOperationHeader("update"),
