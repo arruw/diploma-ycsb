@@ -17,13 +17,16 @@ import (
 )
 
 var (
-	databases   []string  = []string{ /*"postgres",*/ "cockroachdb"}
-	nodescounts []string  = []string{ /*"1",*/ "3"}
-	workloads   []string  = []string{ /*"a", "b", "c", "f", "d",*/ "d", "d"}
-	threads     []string  = []string{ /*"3", "9", "15", "21", "27", "33",*/ "39", "45"}
-	now         time.Time = time.Now()
-	csv         *os.File
-	pwd         string
+	databases   []string = []string{ /*"postgres",*/ "cockroachdb"}
+	nodescounts []string = []string{ /*"1",*/ "3"}
+	workloads   []string = []string{"a", "b", "c", "f", "d"}
+	//threads     []string  = []string{"3", "9", "15", "21", "27", "33", "39", "45"}
+	threads        []string  = []string{"3", "12" /*, "21", "30", "39", "48", "57", "66"*/}
+	now            time.Time = time.Now()
+	csv            *os.File
+	pwd            string
+	totalTests     int = len(databases) * len(nodescounts) * len(workloads) * len(threads)
+	complitedTests int = 0
 )
 
 const (
@@ -79,49 +82,47 @@ func main() {
 	}
 
 	// Run benchmarks
-	dbInitialized := false
 	for _, database := range databases {
 		for _, nodescount := range nodescounts {
-			for _, workload := range workloads {
+			for _, threadcount := range threads {
 
-				// Restore data & start docker stack
-				if !dbInitialized {
-					if err = restoreData(database, nodescount); err != nil {
-						clearData(database)
-						log.Fatalf("%+v", errors.Wrap(err, "Can not restore data."))
-					}
+				// Restore data
+				if err = restoreData(database, nodescount); err != nil {
+					clearData(database)
+					log.Fatalf("%+v", errors.Wrap(err, "Can not restore data."))
+				}
+
+				// Run workloads
+				for _, workload := range workloads {
+					log.Infof("Database: %s\nNodes: %s\nWorkload: %s\nThreads: %s\n", database, nodescount, workload, threadcount)
+
 					if err = startStack(database, nodescount); err != nil {
 						stopStack(database, nodescount)
 						clearData(database)
 						log.Fatalf("%+v", errors.Wrap(err, "Can not start stack."))
 					}
-					dbInitialized = true
-				}
-
-				// Run workload for variety of threads & targets
-				for _, threadcount := range threads {
-					log.Infof("Database: %s\nNodes: %s\nWorkload: %s\nThreads: %s\n", database, nodescount, workload, threadcount)
-
 					if err = ycsbRun(database, nodescount, workload, threadcount); err != nil {
 						stopStack(database, nodescount)
 						clearData(database)
 						log.Fatalf("%+v", errors.Wrap(err, "Can not run YCSB benchmark."))
 					}
+					if err = stopStack(database, nodescount); err != nil {
+						log.Fatalf("%+v", errors.Wrap(err, "Can not stop stack."))
+					}
+
+					complitedTests++
+
+					log.Noticef("Progress: %d/%d", complitedTests, totalTests)
+
 					time.Sleep(60 * time.Second)
 				}
-			}
 
-			// Stop docker stack & clear data
-			if err = stopStack(database, nodescount); err != nil {
-				log.Fatalf("%+v", errors.Wrap(err, "Can not stop stack."))
+				// Clear data
+				if err = clearData(database); err != nil {
+					log.Fatalf("%+v", errors.Wrap(err, "Can not clear data."))
+				}
 			}
-			if err = clearData(database); err != nil {
-				log.Fatalf("%+v", errors.Wrap(err, "Can not clear data."))
-			}
-			dbInitialized = false
-
 		}
-
 	}
 }
 
@@ -328,12 +329,15 @@ func ycsbRun(database string, nodescount string, workload string, threadcount st
 		return errors.Wrap(err, "Can not wait command.")
 	}
 
+	if result.Throughput == 0 {
+		return errors.New("Throughput is 0 ops/sec.")
+	}
+
 	json, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		return errors.Wrap(err, "Can not convert to JSON.")
 	}
-
-	log.Notice(string(json))
+	log.Info(string(json))
 
 	_, err = csv.WriteString(fmt.Sprintf("%s\n", result.ToCsvRow()))
 	if err != nil {
